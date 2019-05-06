@@ -32,8 +32,20 @@ public class UmsatzSendenDelegate implements JavaDelegate {
 
     @Override
     public void execute(final DelegateExecution execution) {
-        // TODO: Umsatz senden und im Fehler BpmnError werfen
+        boolean umsatzErfolgreichVersendet = false;
+        try {
+            final ObjectValue kontoumsatzObjectValue = execution.getVariableTyped("kontoumsatz");
+            umsatzAnsPartnerkontoSenden.sendeUmsatz(kontoumsatzObjectValue.getValue(Kontoumsatz.class), execution.getBusinessKey());
 
-        logInfo(LOGGER, execution);
+            umsatzErfolgreichVersendet = true;
+        } catch (final Exception e) {
+            LOGGER.error("Exception beim Umsatz-Senden", e);
+
+            umsatzErfolgreichVersendet = false;
+        } finally {
+            execution.setVariable("umsatz_erfolgreich_versendet", umsatzErfolgreichVersendet);
+
+            logInfo(LOGGER, execution);
+        }
     }
 }

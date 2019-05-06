@@ -24,7 +24,10 @@ public class UmsatztypErmittelnDelegate implements JavaDelegate {
 
     @Override
     public void execute(final DelegateExecution execution) {
-        // TODO: Ermitteln ob CFD Umsatz und Prozessvariable setzen
+        final ObjectValue kontoumsatzObjectValue = execution.getVariableTyped("kontoumsatz");
+        final boolean cfdUmsatz = istCfdUmsatz(kontoumsatzObjectValue.getValue(Kontoumsatz.class));
+
+        execution.setVariable("ist_cfd_umsatz", cfdUmsatz);
 
         logInfo(LOGGER, execution);
     }

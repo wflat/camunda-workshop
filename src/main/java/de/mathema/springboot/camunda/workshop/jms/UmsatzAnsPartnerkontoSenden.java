@@ -23,8 +23,9 @@ public class UmsatzAnsPartnerkontoSenden {
     private JmsMessageSender jmsMessageSender;
 
     public void sendeUmsatz(final Kontoumsatz kontoumsatz, final String correlationId) {
-        // TODO: Umsatz an das Partnerkonto
+        final JmsMessage jmsMessage = jmsMessageSender.convertAndSend(kontoumsatz, correlationId);
 
-        LOG.info("Umsatz mit correlationId {} ans Partnerkonto gesendet", correlationId);
+        LOG.info("Umsatz mit correlationId {} ans Partnerkonto gesendet. MessageId {}", correlationId,
+                jmsMessage.getMessageId());
     }
 }

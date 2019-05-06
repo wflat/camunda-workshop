@@ -73,8 +73,58 @@ public class CfdProcessTests {
 
     @Test
     @Deployment(resources = "cfd-process.bpmn")
-    @Ignore
     public void cfdProcess_deployment() {
-        // TODO: Deployment Test zum Laufen bringen
+    }
+
+    @Test
+    @Deployment(resources = "cfd-process.bpmn")
+    public void cfdProcess_keinCfdUmsatz() {
+        final ProcessInstance processInstance = startProzessMit("Test");
+        assertThat(processInstance).isNotNull();
+
+        assertThat(processInstance).isEnded();
+
+        coverageBuilder.coverageSnapshot(processInstance);
+    }
+
+    @Test
+    @Deployment(resources = "cfd-process.bpmn")
+    public void cfdProcess_fehlerBeimUmsatzSenden() {
+        doThrow(new RuntimeException()).when(umsatzAnsPartnerkontoSenden).sendeUmsatz(any(Kontoumsatz.class), anyString());
+
+        final ProcessInstance processInstance = startProzessMit("CFD");
+        assertThat(processInstance).isNotNull();
+
+        assertThat(processInstance).task().hasName("Umsatz manuell buchen");
+        complete(task(), withVariables("wurde_manuell_ueberwiesen", true));
+
+        assertThat(processInstance).isEnded();
+
+        coverageBuilder.coverageSnapshot(processInstance);
+    }
+
+    @Test
+    @Deployment(resources = "cfd-process.bpmn")
+    public void cfdProcess_erfolgreichVerarbeitet() {
+        final ProcessInstance processInstance = startProzessMit("CFD");
+        assertThat(processInstance).isNotNull();
+
+        assertThat(processInstance).isEnded();
+
+        coverageBuilder.coverageSnapshot(processInstance);
+    }
+
+    private ProcessInstance startProzessMit(final String kontotyp) {
+        return processEngineRule.getRuntimeService().startProcessInstanceByKey(
+                "Prozess_Cfd", "businessKey", prozessVariablen(kontotyp));
+    }
+
+    private Map<String, Object> prozessVariablen(final String kontotyp) {
+        return withVariables("kontoumsatz", kontoumsatzMit(kontotyp));
+    }
+
+    private ObjectValue kontoumsatzMit(final String kontentyp) {
+        final Kontoumsatz kontoumsatz = Kontoumsatz.builder().iban("DE 1234 5678 1234 5678 90").kontentyp(kontentyp).betrag(10.0).build();
+        return objectValue(kontoumsatz).serializationDataFormat(JSON).create();
     }
 }
