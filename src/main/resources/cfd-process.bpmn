@@ -3,60 +3,86 @@
   <bpmn:collaboration id="Collaboration_CfdUmsatz">
     <bpmn:participant id="Participant_TradingDepartment" name="Trading Abteilung" processRef="Prozess_Cfd" />
     <bpmn:participant id="Participant_PartnerBank" name="Partner Bank" processRef="Process_PartnerBank" />
-    <bpmn:messageFlow id="MessageFlow_UmsatzAnPartnerSenden" name="Umsatz senden" sourceRef="Task_UmsatzSenden" targetRef="Participant_PartnerBank" />
+    <bpmn:messageFlow id="MessageFlow_UmsatzAnPartnerSenden" name="Umsatz an Partner senden" sourceRef="Task_UmsatzSenden" targetRef="Participant_PartnerBank" />
+    <bpmn:messageFlow id="MessageFlow_1xkpf1o" name="Einzahlungs-bestätigung" sourceRef="Participant_PartnerBank" targetRef="Task_AufBestaetigungWarten" />
   </bpmn:collaboration>
   <bpmn:process id="Prozess_Cfd" name="CFD" isExecutable="true">
     <bpmn:laneSet id="LaneSet_0hb3kcf">
       <bpmn:lane id="Lane_IT" name="IT">
         <bpmn:flowNodeRef>Task_UmsatztypErmitteln</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>StartEvent_NeuerUmsatzVorhanden</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>EndEvent_KeinCfdUmsart</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>ExclusiveGateway_IstCfd</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>Task_UmsatzSenden</bpmn:flowNodeRef>
-        <bpmn:flowNodeRef>ExclusiveGateway_ErfolgreichSenden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_KeinCfdUmsart</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>EndEvent_ErfolgreichVerarbeitet</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>StartEvent_NeuerUmsatzVorhanden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_UmsatzSenden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_AufBestaetigungWarten</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>BoundaryEvent_ErrorUmsatzSenden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>BoundaryEvent_KeineBestaetigungNach1Tag</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>BoundaryEvent_KeineBestaetigungNach30Sekunden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_KeineBestaetigungNach1Tag</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>IntermediateThrowEvent_KeineBestaetigungNach30Sekunden</bpmn:flowNodeRef>
       </bpmn:lane>
       <bpmn:lane id="Lane_Fachbereich" name="Fachbereich">
         <bpmn:flowNodeRef>Task_UmsatzManuellBuchen</bpmn:flowNodeRef>
         <bpmn:flowNodeRef>EndEvent_UmsatzManuellGebucht</bpmn:flowNodeRef>
       </bpmn:lane>
     </bpmn:laneSet>
-    <bpmn:sequenceFlow id="SequenceFlow_XorErfolgreichSendenToUmsatzManuellBuchen" name="Nein" sourceRef="ExclusiveGateway_ErfolgreichSenden" targetRef="Task_UmsatzManuellBuchen">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${umsatz_erfolgreich_versendet == false}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="SequenceFlow_ErrorUmsatzSendenToUmsatzManuellBuchen" sourceRef="BoundaryEvent_ErrorUmsatzSenden" targetRef="Task_UmsatzManuellBuchen" />
+    <bpmn:sequenceFlow id="SequenceFlow_KeineBestaetigungNach30Sekunden" name="nach 30 Sekunden" sourceRef="BoundaryEvent_KeineBestaetigungNach30Sekunden" targetRef="IntermediateThrowEvent_KeineBestaetigungNach30Sekunden" />
+    <bpmn:sequenceFlow id="SequenceFlow_KeineBestaetigungNach1Tag" name="nach 1 Tag" sourceRef="BoundaryEvent_KeineBestaetigungNach1Tag" targetRef="EndEvent_KeineBestaetigungNach1Tag" />
+    <bpmn:sequenceFlow id="SequenceFlow_UmsatzManuellBuchenToManuellGebucht" sourceRef="Task_UmsatzManuellBuchen" targetRef="EndEvent_UmsatzManuellGebucht" />
     <bpmn:serviceTask id="Task_UmsatztypErmitteln" name="Umsatztyp ermitteln" camunda:delegateExpression="${umsatztypErmittelnDelegate}">
       <bpmn:incoming>SequenceFlow_StartToUmsatztypErmitteln</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_UmsatztypToXorIStCfd</bpmn:outgoing>
     </bpmn:serviceTask>
-    <bpmn:startEvent id="StartEvent_NeuerUmsatzVorhanden" name="Neuer Umsatz vorhanden" camunda:formKey="embedded:app:forms/embedded/cfd-process-start-form.html">
-      <bpmn:extensionElements>
-        <camunda:executionListener delegateExpression="${prozessVariablenSetzenDelegate}" event="start" />
-      </bpmn:extensionElements>
-      <bpmn:outgoing>SequenceFlow_StartToUmsatztypErmitteln</bpmn:outgoing>
-    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="ExclusiveGateway_IstCfd" name="Ist CFD Umsatz?">
+      <bpmn:incoming>SequenceFlow_UmsatztypToXorIStCfd</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_XorToEnd</bpmn:outgoing>
+      <bpmn:outgoing>SequenceFlow_XorIstCfdToUmsatzSenden</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
     <bpmn:endEvent id="EndEvent_KeinCfdUmsart" name="Prozessende">
       <bpmn:extensionElements>
         <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
       </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_XorToEnd</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:exclusiveGateway id="ExclusiveGateway_IstCfd" name="Ist CFD Umsatz?">
-      <bpmn:incoming>SequenceFlow_UmsatztypToXorIStCfd</bpmn:incoming>
-      <bpmn:outgoing>SequenceFlow_XorToEnd</bpmn:outgoing>
-      <bpmn:outgoing>SequenceFlow_XorIstCfdToUmsatzSenden</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
-    <bpmn:serviceTask id="Task_UmsatzSenden" name="Umsatz an den Partner senden" camunda:delegateExpression="${umsatzSendenDelegate}">
-      <bpmn:incoming>SequenceFlow_XorIstCfdToUmsatzSenden</bpmn:incoming>
-      <bpmn:outgoing>SequenceFlow_UmsatzSendenToXorSendenErfolgreich</bpmn:outgoing>
-    </bpmn:serviceTask>
-    <bpmn:exclusiveGateway id="ExclusiveGateway_ErfolgreichSenden" name="Umsatz erfolgreich versendet">
-      <bpmn:incoming>SequenceFlow_UmsatzSendenToXorSendenErfolgreich</bpmn:incoming>
-      <bpmn:outgoing>SequenceFlow_XorErfolgreichSendenToErfolgreichVerarbeitet</bpmn:outgoing>
-      <bpmn:outgoing>SequenceFlow_XorErfolgreichSendenToUmsatzManuellBuchen</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
     <bpmn:endEvent id="EndEvent_ErfolgreichVerarbeitet" name="Umsatz erfolgreich versendet">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="#{loggingDelegate}" event="start" />
+      </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_XorErfolgreichSendenToErfolgreichVerarbeitet</bpmn:incoming>
     </bpmn:endEvent>
+    <bpmn:startEvent id="StartEvent_NeuerUmsatzVorhanden" name="Neuer Umsatz vorhanden" camunda:formKey="embedded:app:forms/embedded/cfd-process-start-form.html">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${prozessVariablenSetzenDelegate}" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>SequenceFlow_StartToUmsatztypErmitteln</bpmn:outgoing>
+      <bpmn:messageEventDefinition messageRef="Message_0uq2c8l" />
+    </bpmn:startEvent>
+    <bpmn:sendTask id="Task_UmsatzSenden" name="Umsatz an den Partner senden" camunda:delegateExpression="${umsatzSendenDelegate}">
+      <bpmn:incoming>SequenceFlow_XorIstCfdToUmsatzSenden</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_UmsatzSendenToAufBestaetigungWarten</bpmn:outgoing>
+    </bpmn:sendTask>
+    <bpmn:receiveTask id="Task_AufBestaetigungWarten" name="Auf Bestätigung warten" messageRef="Message_17739bu">
+      <bpmn:incoming>SequenceFlow_UmsatzSendenToAufBestaetigungWarten</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_XorErfolgreichSendenToErfolgreichVerarbeitet</bpmn:outgoing>
+    </bpmn:receiveTask>
+    <bpmn:boundaryEvent id="BoundaryEvent_ErrorUmsatzSenden" attachedToRef="Task_UmsatzSenden">
+      <bpmn:outgoing>SequenceFlow_ErrorUmsatzSendenToUmsatzManuellBuchen</bpmn:outgoing>
+      <bpmn:errorEventDefinition errorRef="Error_1iwqlza" />
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="BoundaryEvent_KeineBestaetigungNach1Tag" attachedToRef="Task_AufBestaetigungWarten">
+      <bpmn:outgoing>SequenceFlow_KeineBestaetigungNach1Tag</bpmn:outgoing>
+      <bpmn:timerEventDefinition>
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">${ein_tag_timer}</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
+    <bpmn:boundaryEvent id="BoundaryEvent_KeineBestaetigungNach30Sekunden" cancelActivity="false" attachedToRef="Task_AufBestaetigungWarten">
+      <bpmn:outgoing>SequenceFlow_KeineBestaetigungNach30Sekunden</bpmn:outgoing>
+      <bpmn:timerEventDefinition id="TimerEventDefinition_0l29ysn">
+        <bpmn:timeDuration xsi:type="bpmn:tFormalExpression">${dreissig_sekunden_timer}</bpmn:timeDuration>
+      </bpmn:timerEventDefinition>
+    </bpmn:boundaryEvent>
     <bpmn:sequenceFlow id="SequenceFlow_StartToUmsatztypErmitteln" sourceRef="StartEvent_NeuerUmsatzVorhanden" targetRef="Task_UmsatztypErmitteln" />
     <bpmn:sequenceFlow id="SequenceFlow_UmsatztypToXorIStCfd" sourceRef="Task_UmsatztypErmitteln" targetRef="ExclusiveGateway_IstCfd" />
     <bpmn:sequenceFlow id="SequenceFlow_XorToEnd" name="Nein" sourceRef="ExclusiveGateway_IstCfd" targetRef="EndEvent_KeinCfdUmsart">
@@ -65,18 +91,26 @@
     <bpmn:sequenceFlow id="SequenceFlow_XorIstCfdToUmsatzSenden" name="Ja" sourceRef="ExclusiveGateway_IstCfd" targetRef="Task_UmsatzSenden">
       <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${ist_cfd_umsatz == true}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
-    <bpmn:sequenceFlow id="SequenceFlow_UmsatzSendenToXorSendenErfolgreich" sourceRef="Task_UmsatzSenden" targetRef="ExclusiveGateway_ErfolgreichSenden" />
-    <bpmn:sequenceFlow id="SequenceFlow_XorErfolgreichSendenToErfolgreichVerarbeitet" name="Ja&#10;&#10;" sourceRef="ExclusiveGateway_ErfolgreichSenden" targetRef="EndEvent_ErfolgreichVerarbeitet">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${umsatz_erfolgreich_versendet == true}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="SequenceFlow_XorErfolgreichSendenToErfolgreichVerarbeitet" name="Bestätigung angekommen" sourceRef="Task_AufBestaetigungWarten" targetRef="EndEvent_ErfolgreichVerarbeitet" />
+    <bpmn:sequenceFlow id="SequenceFlow_UmsatzSendenToAufBestaetigungWarten" sourceRef="Task_UmsatzSenden" targetRef="Task_AufBestaetigungWarten" />
+    <bpmn:endEvent id="EndEvent_KeineBestaetigungNach1Tag" name="Nachricht an den Fachbereich">
+      <bpmn:incoming>SequenceFlow_KeineBestaetigungNach1Tag</bpmn:incoming>
+      <bpmn:messageEventDefinition camunda:delegateExpression="#{loggingDelegate}" />
+    </bpmn:endEvent>
+    <bpmn:intermediateThrowEvent id="IntermediateThrowEvent_KeineBestaetigungNach30Sekunden" name="Nachricht an den Fachbereich">
+      <bpmn:incoming>SequenceFlow_KeineBestaetigungNach30Sekunden</bpmn:incoming>
+      <bpmn:messageEventDefinition camunda:delegateExpression="#{loggingDelegate}" />
+    </bpmn:intermediateThrowEvent>
     <bpmn:userTask id="Task_UmsatzManuellBuchen" name="Umsatz manuell buchen" camunda:formKey="embedded:app:forms/embedded/cfd-user-task-form.html" camunda:assignee="demo">
-      <bpmn:incoming>SequenceFlow_XorErfolgreichSendenToUmsatzManuellBuchen</bpmn:incoming>
+      <bpmn:incoming>SequenceFlow_ErrorUmsatzSendenToUmsatzManuellBuchen</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_UmsatzManuellBuchenToManuellGebucht</bpmn:outgoing>
     </bpmn:userTask>
     <bpmn:endEvent id="EndEvent_UmsatzManuellGebucht" name="Umsatz manuell gebucht">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="#{loggingDelegate}" event="start" />
+      </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_UmsatzManuellBuchenToManuellGebucht</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:sequenceFlow id="SequenceFlow_UmsatzManuellBuchenToManuellGebucht" sourceRef="Task_UmsatzManuellBuchen" targetRef="EndEvent_UmsatzManuellGebucht" />
     <bpmn:textAnnotation id="TextAnnotation_0pxtdov">
       <bpmn:text>Neuer Umsatz vorhanden</bpmn:text>
     </bpmn:textAnnotation>
@@ -90,121 +124,160 @@
   <bpmndi:BPMNDiagram id="BPMNDiagram_1">
     <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_CfdUmsatz">
       <bpmndi:BPMNShape id="Participant_0ysvqwr_di" bpmnElement="Participant_TradingDepartment" isHorizontal="true">
-        <dc:Bounds x="156" y="81" width="1014" height="429" />
+        <dc:Bounds x="156" y="81" width="964" height="524" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="TextAnnotation_0pxtdov_di" bpmnElement="TextAnnotation_0pxtdov">
-        <dc:Bounds x="212" y="107" width="152" height="30" />
+        <dc:Bounds x="197" y="100" width="152" height="30" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ServiceTask_0adrjaq_di" bpmnElement="Task_UmsatztypErmitteln">
-        <dc:Bounds x="355" y="144" width="100" height="80" />
+        <dc:Bounds x="349" y="120" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="Association_04cvi2n_di" bpmnElement="Association_04cvi2n">
-        <di:waypoint x="256" y="166" />
-        <di:waypoint x="256" y="137" />
+        <di:waypoint x="247" y="143" />
+        <di:waypoint x="244" y="130" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SequenceFlow_17vdb4g_di" bpmnElement="SequenceFlow_StartToUmsatztypErmitteln">
-        <di:waypoint x="274" y="184" />
-        <di:waypoint x="355" y="184" />
+        <di:waypoint x="268" y="160" />
+        <di:waypoint x="349" y="160" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Lane_05mnchg_di" bpmnElement="Lane_IT" isHorizontal="true">
-        <dc:Bounds x="186" y="81" width="984" height="305" />
+        <dc:Bounds x="186" y="81" width="934" height="416" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="Participant_07d779a_di" bpmnElement="Participant_PartnerBank" isHorizontal="true">
-        <dc:Bounds x="156" y="538" width="1017" height="60" />
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="StartEvent_16r1xq1_di" bpmnElement="StartEvent_NeuerUmsatzVorhanden" bioc:stroke="#000" bioc:fill="#fff">
-        <dc:Bounds x="238" y="166" width="36" height="36" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="221" y="209" width="71" height="27" />
-        </bpmndi:BPMNLabel>
+        <dc:Bounds x="156" y="640" width="964" height="60" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_0fum79a_di" bpmnElement="EndEvent_KeinCfdUmsart">
-        <dc:Bounds x="1053" y="166" width="36" height="36" />
+        <dc:Bounds x="1047" y="142" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1040" y="209" width="65" height="14" />
+          <dc:Bounds x="1034" y="185" width="65" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="SequenceFlow_0v96m4q_di" bpmnElement="SequenceFlow_XorToEnd">
-        <di:waypoint x="568" y="184" />
-        <di:waypoint x="1053" y="184" />
+        <di:waypoint x="562" y="160" />
+        <di:waypoint x="1047" y="160" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="800" y="166" width="23" height="14" />
+          <dc:Bounds x="794" y="142" width="23" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="ExclusiveGateway_1oxrxap_di" bpmnElement="ExclusiveGateway_IstCfd" isMarkerVisible="true">
-        <dc:Bounds x="518" y="159" width="50" height="50" />
+        <dc:Bounds x="512" y="135" width="50" height="50" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="501" y="144" width="84" height="14" />
+          <dc:Bounds x="495" y="120" width="84" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="SequenceFlow_10tjspk_di" bpmnElement="SequenceFlow_UmsatztypToXorIStCfd">
-        <di:waypoint x="455" y="184" />
-        <di:waypoint x="518" y="184" />
+        <di:waypoint x="449" y="160" />
+        <di:waypoint x="512" y="160" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNEdge id="SequenceFlow_1fhhbj1_di" bpmnElement="SequenceFlow_XorIstCfdToUmsatzSenden">
-        <di:waypoint x="543" y="209" />
-        <di:waypoint x="543" y="312" />
-        <di:waypoint x="601" y="312" />
+        <di:waypoint x="537" y="185" />
+        <di:waypoint x="537" y="288" />
+        <di:waypoint x="595" y="288" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="552" y="257" width="12" height="14" />
+          <dc:Bounds x="546" y="233" width="12" height="14" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="ServiceTask_0e2rkj4_di" bpmnElement="Task_UmsatzSenden">
-        <dc:Bounds x="601" y="272" width="100" height="80" />
-      </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="MessageFlow_0kqtwhs_di" bpmnElement="MessageFlow_UmsatzAnPartnerSenden">
-        <di:waypoint x="651" y="352" />
-        <di:waypoint x="651" y="538" />
+        <di:waypoint x="609" y="328" />
+        <di:waypoint x="609" y="640" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="567" y="442" width="77" height="14" />
+          <dc:Bounds x="521" y="606.9999999999999" width="76" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
-      <bpmndi:BPMNShape id="ExclusiveGateway_1rufc2m_di" bpmnElement="ExclusiveGateway_ErfolgreichSenden" isMarkerVisible="true">
-        <dc:Bounds x="812" y="287" width="50" height="50" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="811" y="237" width="52" height="40" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNShape>
-      <bpmndi:BPMNEdge id="SequenceFlow_1o4126f_di" bpmnElement="SequenceFlow_UmsatzSendenToXorSendenErfolgreich">
-        <di:waypoint x="701" y="312" />
-        <di:waypoint x="812" y="312" />
+      <bpmndi:BPMNEdge id="SequenceFlow_1o4126f_di" bpmnElement="SequenceFlow_UmsatzSendenToAufBestaetigungWarten">
+        <di:waypoint x="695" y="288" />
+        <di:waypoint x="785" y="288" />
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="EndEvent_0n6ox6w_di" bpmnElement="EndEvent_ErfolgreichVerarbeitet">
-        <dc:Bounds x="1053" y="294" width="36" height="36" />
+        <dc:Bounds x="1047" y="270" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1046" y="337" width="52" height="40" />
+          <dc:Bounds x="1039" y="228" width="52" height="40" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="SequenceFlow_0akplvp_di" bpmnElement="SequenceFlow_XorErfolgreichSendenToErfolgreichVerarbeitet">
-        <di:waypoint x="862" y="312" />
-        <di:waypoint x="1053" y="312" />
+        <di:waypoint x="885" y="288" />
+        <di:waypoint x="1047" y="288" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="952" y="294" width="12" height="40" />
-        </bpmndi:BPMNLabel>
-      </bpmndi:BPMNEdge>
-      <bpmndi:BPMNEdge id="SequenceFlow_0cr2i3f_di" bpmnElement="SequenceFlow_XorErfolgreichSendenToUmsatzManuellBuchen">
-        <di:waypoint x="837" y="337" />
-        <di:waypoint x="837" y="410" />
-        <bpmndi:BPMNLabel>
-          <dc:Bounds x="843" y="359" width="23" height="14" />
+          <dc:Bounds x="933" y="254" width="67" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNEdge>
       <bpmndi:BPMNShape id="Lane_16xrhja_di" bpmnElement="Lane_Fachbereich" isHorizontal="true">
-        <dc:Bounds x="186" y="386" width="984" height="124" />
+        <dc:Bounds x="186" y="497" width="934" height="108" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="UserTask_01xgdwh_di" bpmnElement="Task_UmsatzManuellBuchen">
-        <dc:Bounds x="787" y="410" width="100" height="80" />
+        <dc:Bounds x="835" y="511" width="100" height="80" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="EndEvent_0wj16lf_di" bpmnElement="EndEvent_UmsatzManuellGebucht">
-        <dc:Bounds x="1053" y="432" width="36" height="36" />
+        <dc:Bounds x="1047" y="533" width="36" height="36" />
         <bpmndi:BPMNLabel>
-          <dc:Bounds x="1032" y="475" width="79" height="27" />
+          <dc:Bounds x="1025" y="506" width="79" height="27" />
         </bpmndi:BPMNLabel>
       </bpmndi:BPMNShape>
       <bpmndi:BPMNEdge id="SequenceFlow_1ebdtm7_di" bpmnElement="SequenceFlow_UmsatzManuellBuchenToManuellGebucht">
-        <di:waypoint x="887" y="450" />
-        <di:waypoint x="1053" y="450" />
+        <di:waypoint x="935" y="551" />
+        <di:waypoint x="1047" y="551" />
       </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="StartEvent_1wovhcb_di" bpmnElement="StartEvent_NeuerUmsatzVorhanden" bioc:stroke="#000" bioc:fill="#fff">
+        <dc:Bounds x="232" y="142" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="215" y="185" width="71" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="SendTask_1i4dx2p_di" bpmnElement="Task_UmsatzSenden">
+        <dc:Bounds x="595" y="248" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_0q0h3r5_di" bpmnElement="BoundaryEvent_ErrorUmsatzSenden">
+        <dc:Bounds x="632" y="310" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0ov49ou_di" bpmnElement="SequenceFlow_ErrorUmsatzSendenToUmsatzManuellBuchen">
+        <di:waypoint x="650" y="346" />
+        <di:waypoint x="650" y="551" />
+        <di:waypoint x="835" y="551" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="ReceiveTask_1ys3fog_di" bpmnElement="Task_AufBestaetigungWarten">
+        <dc:Bounds x="785" y="248" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="MessageFlow_1xkpf1o_di" bpmnElement="MessageFlow_1xkpf1o">
+        <di:waypoint x="795" y="640" />
+        <di:waypoint x="795" y="328" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="720" y="611" width="64" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_17r49v3_di" bpmnElement="SequenceFlow_KeineBestaetigungNach30Sekunden">
+        <di:waypoint x="835" y="346" />
+        <di:waypoint x="835" y="441" />
+        <di:waypoint x="950" y="441" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="849" y="406" width="50" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="BoundaryEvent_0ru1l8m_di" bpmnElement="BoundaryEvent_KeineBestaetigungNach1Tag">
+        <dc:Bounds x="867" y="310" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_0cv69c4_di" bpmnElement="BoundaryEvent_KeineBestaetigungNach30Sekunden">
+        <dc:Bounds x="817" y="310" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="IntermediateThrowEvent_0i1e4r0_di" bpmnElement="IntermediateThrowEvent_KeineBestaetigungNach30Sekunden">
+        <dc:Bounds x="950" y="423" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="926" y="457" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1d30cwv_di" bpmnElement="SequenceFlow_KeineBestaetigungNach1Tag">
+        <di:waypoint x="885" y="346" />
+        <di:waypoint x="885" y="386" />
+        <di:waypoint x="1047" y="386" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="923" y="370" width="54" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_0hzwtwp_di" bpmnElement="EndEvent_KeineBestaetigungNach1Tag">
+        <dc:Bounds x="1047" y="368" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1023" y="341" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 </bpmn:definitions>

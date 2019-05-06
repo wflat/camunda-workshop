@@ -4,8 +4,6 @@ import static de.mathema.springboot.camunda.workshop.jms.message.JmsMessageHeade
 import static org.camunda.bpm.engine.variable.Variables.SerializationDataFormats.JSON;
 import static org.camunda.bpm.engine.variable.Variables.objectValue;
 
-import java.util.Optional;
-
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.runtime.ProcessInstance;
 import org.camunda.bpm.engine.variable.VariableMap;
@@ -35,8 +33,18 @@ public class NeuenUmsatzEmpfangen {
 
     @JmsListener(destination = "${cfd.queue.neuer-umsatz}", containerFactory = "jmsListenerContainerFactory")
     public void neuerUmsatzEmpfangen(final Message<Kontoumsatz> msg) {
-        LOGGER.info("Neuen Umsatz empfangen mit messageId {}", getMessageId(msg.getHeaders()));
+        final Kontoumsatz kontoumsatz = msg.getPayload();
+        final ObjectValue kontoumsatzObjectValue = objectValue(kontoumsatz).serializationDataFormat(JSON).create();
+        final String messageId = getMessageId(msg.getHeaders());
 
-        // TODO: Neuen Prozess starten
+        LOGGER.info("Neuen Umsatz empfangen mit messageId {}", messageId);
+
+        final VariableMap variables = Variables.createVariables().
+                putValueTyped("kontoumsatz", kontoumsatzObjectValue);
+        final ProcessInstance processInstance = runtimeService
+                .startProcessInstanceByMessage("Message_NeuerUmsatzVorhanden", messageId, variables);
+
+        LOGGER.info("Prozess mit ID {} und businessKey {} gestartet",
+                processInstance.getProcessInstanceId(), processInstance.getBusinessKey());
     }
 }

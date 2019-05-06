@@ -1,12 +1,15 @@
 package de.mathema.springboot.camunda.workshop.jms;
 
 import static de.mathema.springboot.camunda.workshop.jms.message.JmsMessageHeadersUtils.getCorrelationId;
+import static org.camunda.bpm.engine.variable.Variables.SerializationDataFormats.JSON;
+import static org.camunda.bpm.engine.variable.Variables.objectValue;
 
 import java.util.Optional;
 
 import org.camunda.bpm.engine.RuntimeService;
 import org.camunda.bpm.engine.runtime.Execution;
 import org.camunda.bpm.engine.runtime.MessageCorrelationResult;
+import org.camunda.bpm.engine.variable.value.ObjectValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,9 +34,19 @@ public class PartnerkontoBestaetigungEmpfangen {
 
     @JmsListener(destination = "${cfd.queue.partnerkonto-empfangen}", containerFactory = "jmsListenerContainerFactory")
     public void bestaetigungEmpfangen(final Message<KontoumsatzBestaetigung> msg) {
-        LOGGER.info("Umsatz-Bestaetigung mit correlationID {} empfangen", getCorrelationId(msg.getHeaders()));
+        final KontoumsatzBestaetigung bestaetigung = msg.getPayload();
+        final ObjectValue bestaetigungObjectValue = objectValue(bestaetigung).serializationDataFormat(JSON).create();
+        final String correlationId = getCorrelationId(msg.getHeaders());
 
-        // TODO: MessageEvengt an die Prozessinstanz senden
+        LOGGER.info("Umsatz-Bestaetigung mit correlationID {} empfangen", correlationId);
+
+        final MessageCorrelationResult correlationResult = runtimeService
+                .createMessageCorrelation("Message_BestaetigungAngekommen")
+                .processInstanceBusinessKey(correlationId)
+                .setVariable("bestaetigung", bestaetigungObjectValue)
+                .correlateWithResult();
+
+        LOGGER.info("Prozess mit ID {} aufgeweckt", getProcessId(correlationResult));
     }
 
     private String getProcessId(final MessageCorrelationResult correlationResult) {

@@ -32,19 +32,13 @@ public class UmsatzSendenDelegate implements JavaDelegate {
 
     @Override
     public void execute(final DelegateExecution execution) {
-        boolean umsatzErfolgreichVersendet = false;
         try {
             final ObjectValue kontoumsatzObjectValue = execution.getVariableTyped("kontoumsatz");
             umsatzAnsPartnerkontoSenden.sendeUmsatz(kontoumsatzObjectValue.getValue(Kontoumsatz.class), execution.getBusinessKey());
-
-            umsatzErfolgreichVersendet = true;
         } catch (final Exception e) {
             LOGGER.error("Exception beim Umsatz-Senden", e);
-
-            umsatzErfolgreichVersendet = false;
+            throw new BpmnError(ERROR_CODE);
         } finally {
-            execution.setVariable("umsatz_erfolgreich_versendet", umsatzErfolgreichVersendet);
-
             logInfo(LOGGER, execution);
         }
     }

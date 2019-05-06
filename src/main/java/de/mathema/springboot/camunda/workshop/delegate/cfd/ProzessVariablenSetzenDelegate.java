@@ -28,7 +28,9 @@ public class ProzessVariablenSetzenDelegate implements JavaDelegate {
 
     @Override
     public void execute(final DelegateExecution execution) {
-        // TODO: Timer Variablen setzen
+        execution.setVariable("dreissig_sekunden_timer", dreissigSekundenTimer);
+        execution.setVariable("ein_tag_timer", einTagTimer);
+
         logInfo(LOGGER, execution);
     }
 }

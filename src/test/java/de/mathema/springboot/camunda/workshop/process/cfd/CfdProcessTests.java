@@ -23,7 +23,6 @@ import org.hamcrest.CoreMatchers;
 import org.hamcrest.MatcherAssert;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -32,9 +31,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import de.mathema.springboot.camunda.workshop.jms.UmsatzAnsPartnerkontoSenden;
 import de.mathema.springboot.camunda.workshop.config.CfdAppTestConfig;
 import de.mathema.springboot.camunda.workshop.config.ProcessEngineTestConfig;
+import de.mathema.springboot.camunda.workshop.jms.UmsatzAnsPartnerkontoSenden;
 import de.mathema.springboot.camunda.workshop.model.Kontoumsatz;
 import de.mathema.springboot.camunda.workshop.model.KontoumsatzBestaetigung;
 
@@ -105,9 +104,31 @@ public class CfdProcessTests {
 
     @Test
     @Deployment(resources = "cfd-process.bpmn")
+    public void cfdProcess_timerEvents() {
+        final ProcessInstance processInstance = startProzessMit("CFD");
+        assertThat(processInstance).isNotNull();
+
+        final List<String> executedJobs = executeAvailableJobs(2, 4);
+        MatcherAssert.assertThat(executedJobs, CoreMatchers.hasItems("BoundaryEvent_KeineBestaetigungNach30Sekunden",
+                "BoundaryEvent_KeineBestaetigungNach1Tag"));
+
+        assertThat(processInstance).isEnded();
+
+        coverageBuilder.coverageSnapshot(processInstance);
+    }
+
+    @Test
+    @Deployment(resources = "cfd-process.bpmn")
     public void cfdProcess_erfolgreichVerarbeitet() {
         final ProcessInstance processInstance = startProzessMit("CFD");
         assertThat(processInstance).isNotNull();
+
+        assertThat(processInstance).isWaitingAt("Task_AufBestaetigungWarten");
+        processEngineRule.getRuntimeService()
+                .createMessageCorrelation("Message_BestaetigungAngekommen")
+                .processInstanceBusinessKey(processInstance.getBusinessKey())
+                .setVariable("bestaetigung", bestaetigungMit(true))
+                .correlate();
 
         assertThat(processInstance).isEnded();
 
@@ -115,8 +136,13 @@ public class CfdProcessTests {
     }
 
     private ProcessInstance startProzessMit(final String kontotyp) {
-        return processEngineRule.getRuntimeService().startProcessInstanceByKey(
-                "Prozess_Cfd", "businessKey", prozessVariablen(kontotyp));
+        return processEngineRule.getRuntimeService().startProcessInstanceByMessage(
+                "Message_NeuerUmsatzVorhanden", "businessKey", prozessVariablen(kontotyp));
+    }
+
+    private ObjectValue bestaetigungMit(final boolean erfolgreich) {
+        final KontoumsatzBestaetigung bestaetigung = KontoumsatzBestaetigung.builder().erfolgreich(erfolgreich).build();
+        return objectValue(bestaetigung).serializationDataFormat(JSON).create();
     }
 
     private Map<String, Object> prozessVariablen(final String kontotyp) {
