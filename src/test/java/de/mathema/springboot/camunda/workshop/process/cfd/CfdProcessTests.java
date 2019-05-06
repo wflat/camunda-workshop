@@ -81,6 +81,9 @@ public class CfdProcessTests {
         final ProcessInstance processInstance = startProzessMit("Test");
         assertThat(processInstance).isNotNull();
 
+        assertThat(processInstance).isWaitingAt("StartEvent_NeuerUmsatzVorhanden");
+        executeAvailableJobs(1);
+
         assertThat(processInstance).isEnded();
 
         coverageBuilder.coverageSnapshot(processInstance);
@@ -93,6 +96,12 @@ public class CfdProcessTests {
 
         final ProcessInstance processInstance = startProzessMit("CFD");
         assertThat(processInstance).isNotNull();
+
+        assertThat(processInstance).isWaitingAt("StartEvent_NeuerUmsatzVorhanden");
+        executeAvailableJobs(1);
+
+        assertThat(processInstance).isWaitingAt("Task_UmsatzSenden");
+        executeAvailableJobs(1);
 
         assertThat(processInstance).task().hasName("Umsatz manuell buchen");
         complete(task(), withVariables("wurde_manuell_ueberwiesen", true));
@@ -108,6 +117,12 @@ public class CfdProcessTests {
         final ProcessInstance processInstance = startProzessMit("CFD");
         assertThat(processInstance).isNotNull();
 
+        assertThat(processInstance).isWaitingAt("StartEvent_NeuerUmsatzVorhanden");
+        executeAvailableJobs(1);
+
+        assertThat(processInstance).isWaitingAt("Task_UmsatzSenden");
+        executeAvailableJobs(1);
+
         final List<String> executedJobs = executeAvailableJobs(2, 4);
         MatcherAssert.assertThat(executedJobs, CoreMatchers.hasItems("BoundaryEvent_KeineBestaetigungNach30Sekunden",
                 "BoundaryEvent_KeineBestaetigungNach1Tag"));
@@ -122,6 +137,12 @@ public class CfdProcessTests {
     public void cfdProcess_erfolgreichVerarbeitet() {
         final ProcessInstance processInstance = startProzessMit("CFD");
         assertThat(processInstance).isNotNull();
+
+        assertThat(processInstance).isWaitingAt("StartEvent_NeuerUmsatzVorhanden");
+        executeAvailableJobs(1);
+
+        assertThat(processInstance).isWaitingAt("Task_UmsatzSenden");
+        executeAvailableJobs(1);
 
         assertThat(processInstance).isWaitingAt("Task_AufBestaetigungWarten");
         processEngineRule.getRuntimeService()

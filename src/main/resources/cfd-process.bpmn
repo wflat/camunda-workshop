@@ -52,14 +52,14 @@
       </bpmn:extensionElements>
       <bpmn:incoming>SequenceFlow_XorErfolgreichSendenToErfolgreichVerarbeitet</bpmn:incoming>
     </bpmn:endEvent>
-    <bpmn:startEvent id="StartEvent_NeuerUmsatzVorhanden" name="Neuer Umsatz vorhanden" camunda:formKey="embedded:app:forms/embedded/cfd-process-start-form.html">
+    <bpmn:startEvent id="StartEvent_NeuerUmsatzVorhanden" name="Neuer Umsatz vorhanden" camunda:asyncAfter="true" camunda:formKey="embedded:app:forms/embedded/cfd-process-start-form.html">
       <bpmn:extensionElements>
         <camunda:executionListener delegateExpression="${prozessVariablenSetzenDelegate}" event="start" />
       </bpmn:extensionElements>
       <bpmn:outgoing>SequenceFlow_StartToUmsatztypErmitteln</bpmn:outgoing>
       <bpmn:messageEventDefinition messageRef="Message_0uq2c8l" />
     </bpmn:startEvent>
-    <bpmn:sendTask id="Task_UmsatzSenden" name="Umsatz an den Partner senden" camunda:delegateExpression="${umsatzSendenDelegate}">
+    <bpmn:sendTask id="Task_UmsatzSenden" name="Umsatz an den Partner senden" camunda:asyncBefore="true" camunda:delegateExpression="${umsatzSendenDelegate}">
       <bpmn:incoming>SequenceFlow_XorIstCfdToUmsatzSenden</bpmn:incoming>
       <bpmn:outgoing>SequenceFlow_UmsatzSendenToAufBestaetigungWarten</bpmn:outgoing>
     </bpmn:sendTask>
