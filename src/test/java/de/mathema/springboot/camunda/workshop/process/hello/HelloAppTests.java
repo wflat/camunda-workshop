@@ -19,12 +19,12 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import de.mathema.springboot.camunda.workshop.config.ProcessEngineTestConfig;
-import de.mathema.springboot.camunda.workshop.config.HelloAppTestConfig;
+import de.mathema.springboot.camunda.workshop.config.AppTestConfig;
 
 import io.digitalstate.camunda.coverage.bpmn.CoverageBuilderJavaBridge;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {ProcessEngineTestConfig.class, HelloAppTestConfig.class})
+@ContextConfiguration(classes = {ProcessEngineTestConfig.class, AppTestConfig.class})
 public class HelloAppTests {
 
     @Rule
