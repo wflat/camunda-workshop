@@ -31,7 +31,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import de.mathema.springboot.camunda.workshop.config.CfdAppTestConfig;
+import de.mathema.springboot.camunda.workshop.config.AppTestConfig;
 import de.mathema.springboot.camunda.workshop.config.ProcessEngineTestConfig;
 import de.mathema.springboot.camunda.workshop.jms.UmsatzAnsPartnerkontoSenden;
 import de.mathema.springboot.camunda.workshop.model.Kontoumsatz;
@@ -40,7 +40,7 @@ import de.mathema.springboot.camunda.workshop.model.KontoumsatzBestaetigung;
 import io.digitalstate.camunda.coverage.bpmn.CoverageBuilderJavaBridge;
 
 @RunWith(SpringRunner.class)
-@ContextConfiguration(classes = {ProcessEngineTestConfig.class, CfdAppTestConfig.class})
+@ContextConfiguration(classes = {ProcessEngineTestConfig.class, AppTestConfig.class})
 @TestPropertySource(
         properties = {
                 "cfd.process.dreissig-sekunden-timer=PT1S",
