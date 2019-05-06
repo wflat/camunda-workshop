@@ -1,0 +1,55 @@
+<!--
+ Camunda Workshop
+
+ @author wflat
+-->
+
+<!-- formKey: embedded:app:forms/embedded/cfd-user-task-form.html -->
+<div>
+    <h3>Umsatz manuell überwiesen</h3>
+</div>
+
+<form class="form-horizontal" role="form">
+    <div class="form-group">
+        <label class="control-label col-md-4">IBAN</label>
+        <div class="col-md-8">
+            <label class="form-control">{{kontoumsatz.iban}}</label>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-md-4">Kontentyp</label>
+        <div class="col-md-8">
+            <label class="form-control">{{kontoumsatz.kontentyp}}</label>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-md-4">Betrag</label>
+        <div class="col-md-8">
+            <label class="form-control">{{kontoumsatz.betrag}}</label>
+        </div>
+    </div>
+
+    <script cam-script type="text/form-script">
+    // debugger;
+    var variableManager = camForm.variableManager;
+
+    camForm.on('form-loaded', function() {
+      // this callback is executed *before* the variables are loaded from the server.
+      // if we declare a variable here, its value will be fetched as well
+      variableManager.fetchVariable('kontoumsatz');
+    });
+
+    camForm.on('variables-fetched', function() {
+      $scope.kontoumsatz = variableManager.variableValue('kontoumsatz');
+    });
+
+    camForm.on('submit', function() {
+      // declare a 'json' process-variable 'wurde_manuell_ueberwiesen'
+      variableManager.createVariable({
+        name: 'wurde_manuell_ueberwiesen',
+        type: 'Boolean',
+        value: true
+      });
+    });
+    </script>
+</form>

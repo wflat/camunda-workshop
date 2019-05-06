@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_1wcmnv0" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.0.1">
+  <bpmn:process id="Process_HelloApp" name="HelloApp" isExecutable="true" camunda:versionTag="V1">
+    <bpmn:startEvent id="Start_HelloProcess" camunda:formKey="embedded:app:forms/embedded/hello-app-start-form.html">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="end" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>SequenceFlow_Start2EnterName</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_EnterNameToEnd" sourceRef="Task_EnterName" targetRef="EndEvent_HelloProcess">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${helloNameDelegate}" event="take" />
+      </bpmn:extensionElements>
+    </bpmn:sequenceFlow>
+    <bpmn:endEvent id="EndEvent_HelloProcess">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="end" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_EnterNameToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:userTask id="Task_EnterName" name="Enter Name" camunda:assignee="demo">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="end" />
+        <camunda:taskListener delegateExpression="${loggingTaskListener}" event="create" />
+        <camunda:taskListener delegateExpression="${loggingTaskListener}" event="complete" />
+        <camunda:formData>
+          <camunda:formField id="DeinName" label="Dein Name ist?" type="string" />
+        </camunda:formData>
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_Start2EnterName</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_EnterNameToEnd</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:sequenceFlow id="SequenceFlow_Start2EnterName" sourceRef="Start_HelloProcess" targetRef="Task_EnterName">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="take" />
+      </bpmn:extensionElements>
+    </bpmn:sequenceFlow>
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_HelloApp">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="Start_HelloProcess">
+        <dc:Bounds x="130" y="103" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1fj7z96_di" bpmnElement="SequenceFlow_EnterNameToEnd">
+        <di:waypoint x="342" y="121" />
+        <di:waypoint x="417" y="121" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_17yd07z_di" bpmnElement="EndEvent_HelloProcess">
+        <dc:Bounds x="417" y="103" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="UserTask_0q5e3mb_di" bpmnElement="Task_EnterName">
+        <dc:Bounds x="242" y="81" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1ie6w8q_di" bpmnElement="SequenceFlow_Start2EnterName">
+        <di:waypoint x="166" y="121" />
+        <di:waypoint x="242" y="121" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

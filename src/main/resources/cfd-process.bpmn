@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:bioc="http://bpmn.io/schema/bpmn/biocolor/1.0" id="Definitions_1rey63e" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.0.1">
+  <bpmn:collaboration id="Collaboration_CfdUmsatz">
+    <bpmn:participant id="Participant_TradingDepartment" name="Trading Abteilung" processRef="" />
+    <bpmn:participant id="Participant_PartnerBank" name="Partner Bank" processRef="Process_PartnerBank" />
+  </bpmn:collaboration>
+  <bpmn:process id="" name="" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_0hb3kcf">
+      <bpmn:lane id="Lane_IT" name="IT">
+        <bpmn:flowNodeRef>StartEvent_NeuerUmsatzVorhanden</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_UmsatztypErmitteln</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>EndEvent_Prozess</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Fachbereich" name="Fachbereich" />
+    </bpmn:laneSet>
+    <bpmn:sequenceFlow id="SequenceFlow_StartToUmsatztypErmitteln" sourceRef="StartEvent_NeuerUmsatzVorhanden" targetRef="Task_UmsatztypErmitteln" />
+    <bpmn:startEvent id="StartEvent_NeuerUmsatzVorhanden" name="Neuer Umsatz vorhanden" camunda:formKey="embedded:app:forms/embedded/cfd-process-start-form.html">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${prozessVariablenSetzenDelegate}" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>SequenceFlow_StartToUmsatztypErmitteln</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="Task_UmsatztypErmitteln" name="Umsatztyp ermitteln" camunda:delegateExpression="${umsatztypErmittelnDelegate}">
+      <bpmn:incoming>SequenceFlow_StartToUmsatztypErmitteln</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_UmsatztypErmittelnToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_Prozess" name="Prozessende">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_UmsatztypErmittelnToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_UmsatztypErmittelnToEnd" sourceRef="Task_UmsatztypErmitteln" targetRef="EndEvent_Prozess" />
+    <bpmn:textAnnotation id="TextAnnotation_0pxtdov">
+      <bpmn:text>Neuer Umsatz vorhanden</bpmn:text>
+    </bpmn:textAnnotation>
+    <bpmn:association id="Association_04cvi2n" sourceRef="StartEvent_NeuerUmsatzVorhanden" targetRef="TextAnnotation_0pxtdov" />
+  </bpmn:process>
+  <bpmn:process id="Process_PartnerBank" name="" isExecutable="false" />
+  <bpmn:signal id="Signal_1dhobmn" name="Signal_NeuerUmsatzVorhanden" />
+  <bpmn:error id="Error_1iwqlza" name="Error_FehlerBeimUmsatzSenden_Name" errorCode="Error_FehlerBeimUmsatzSenden_Code" />
+  <bpmn:message id="Message_17739bu" name="Message_BestaetigungAngekommen" />
+  <bpmn:message id="Message_0uq2c8l" name="Message_NeuerUmsatzVorhanden" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Collaboration_CfdUmsatz">
+      <bpmndi:BPMNShape id="Participant_0ysvqwr_di" bpmnElement="Participant_TradingDepartment" isHorizontal="true">
+        <dc:Bounds x="156" y="81" width="1015" height="490" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="TextAnnotation_0pxtdov_di" bpmnElement="TextAnnotation_0pxtdov">
+        <dc:Bounds x="212" y="205" width="152" height="30" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ServiceTask_0adrjaq_di" bpmnElement="Task_UmsatztypErmitteln">
+        <dc:Bounds x="355" y="242" width="100" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Association_04cvi2n_di" bpmnElement="Association_04cvi2n">
+        <di:waypoint x="256" y="264" />
+        <di:waypoint x="256" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_17vdb4g_di" bpmnElement="SequenceFlow_StartToUmsatztypErmitteln">
+        <di:waypoint x="274" y="282" />
+        <di:waypoint x="355" y="282" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="Lane_05mnchg_di" bpmnElement="Lane_IT" isHorizontal="true">
+        <dc:Bounds x="186" y="189" width="985" height="382" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Participant_07d779a_di" bpmnElement="Participant_PartnerBank" isHorizontal="true">
+        <dc:Bounds x="156" y="616" width="1017" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Lane_1ou7oev_di" bpmnElement="Lane_Fachbereich" isHorizontal="true">
+        <dc:Bounds x="186" y="81" width="985" height="108" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="StartEvent_16r1xq1_di" bpmnElement="StartEvent_NeuerUmsatzVorhanden" bioc:stroke="#000" bioc:fill="#fff">
+        <dc:Bounds x="238" y="264" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="221" y="307" width="71" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_0fum79a_di" bpmnElement="EndEvent_Prozess">
+        <dc:Bounds x="536" y="264" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="523" y="307" width="65" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0v96m4q_di" bpmnElement="SequenceFlow_UmsatztypErmittelnToEnd">
+        <di:waypoint x="455" y="282" />
+        <di:waypoint x="536" y="282" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

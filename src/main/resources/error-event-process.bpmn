@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:camunda="http://camunda.org/schema/1.0/bpmn" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="Definitions_1" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="3.0.1">
+  <bpmn:process id="Process_ErrorEvent" name="Error Event Show Case" isExecutable="true">
+    <bpmn:startEvent id="StartEvent_MainProcess" name="Main process started" camunda:formKey="embedded:app:forms/embedded/error-event-start-form.html">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>SequenceFlow_1337pvr</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1337pvr" sourceRef="StartEvent_MainProcess" targetRef="Task_07420kt" />
+    <bpmn:subProcess id="Task_07420kt">
+      <bpmn:incoming>SequenceFlow_1337pvr</bpmn:incoming>
+      <bpmn:outgoing>SequenceFlow_1dt5cb1</bpmn:outgoing>
+      <bpmn:startEvent id="StartEvent_SubProcess" name="Subprocess started">
+        <bpmn:extensionElements>
+          <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+        </bpmn:extensionElements>
+        <bpmn:outgoing>SequenceFlow_0o31jp5</bpmn:outgoing>
+      </bpmn:startEvent>
+      <bpmn:exclusiveGateway id="ExclusiveGateway_ProduceError" name="error  in subprocess?">
+        <bpmn:incoming>SequenceFlow_0o31jp5</bpmn:incoming>
+        <bpmn:outgoing>SequenceFlow_ToSubProcessEndEvent</bpmn:outgoing>
+        <bpmn:outgoing>SequenceFlow_ToErrorSendEvent</bpmn:outgoing>
+      </bpmn:exclusiveGateway>
+      <bpmn:sequenceFlow id="SequenceFlow_0o31jp5" sourceRef="StartEvent_SubProcess" targetRef="ExclusiveGateway_ProduceError" />
+      <bpmn:endEvent id="EndEvent_SubProcessEndEvent" name="Subprocess ended">
+        <bpmn:extensionElements>
+          <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+          <camunda:executionListener event="end">
+            <camunda:script scriptFormat="javascript">execution.setVariable('subprocess_event', 'normal')</camunda:script>
+          </camunda:executionListener>
+        </bpmn:extensionElements>
+        <bpmn:incoming>SequenceFlow_ToSubProcessEndEvent</bpmn:incoming>
+      </bpmn:endEvent>
+      <bpmn:sequenceFlow id="SequenceFlow_ToSubProcessEndEvent" name="no&#10;&#10;" sourceRef="ExclusiveGateway_ProduceError" targetRef="EndEvent_SubProcessEndEvent">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${not subprocess_error}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:sequenceFlow id="SequenceFlow_ToErrorSendEvent" name="yes" sourceRef="ExclusiveGateway_ProduceError" targetRef="EndEvent_SendErrorEvent">
+        <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${subprocess_error}</bpmn:conditionExpression>
+      </bpmn:sequenceFlow>
+      <bpmn:endEvent id="EndEvent_SendErrorEvent" name="Send error event">
+        <bpmn:extensionElements>
+          <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+          <camunda:executionListener event="end">
+            <camunda:script scriptFormat="javascript">execution.setVariable('subprocess_event', 'error')</camunda:script>
+          </camunda:executionListener>
+        </bpmn:extensionElements>
+        <bpmn:incoming>SequenceFlow_ToErrorSendEvent</bpmn:incoming>
+        <bpmn:errorEventDefinition errorRef="Error_1dykt7y" />
+      </bpmn:endEvent>
+    </bpmn:subProcess>
+    <bpmn:boundaryEvent id="BoundaryEvent_0l286sf" name="Error Event from subprocess" attachedToRef="Task_07420kt">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:outgoing>SequenceFlow_154opkx</bpmn:outgoing>
+      <bpmn:errorEventDefinition errorRef="Error_1dykt7y" />
+    </bpmn:boundaryEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_154opkx" sourceRef="BoundaryEvent_0l286sf" targetRef="EndEvent_MainProcessError" />
+    <bpmn:endEvent id="EndEvent_MainProcessEndEvent" name="Main process ended">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_1dt5cb1</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="SequenceFlow_1dt5cb1" sourceRef="Task_07420kt" targetRef="EndEvent_MainProcessEndEvent" />
+    <bpmn:endEvent id="EndEvent_MainProcessError" name="Error occured in subprocess">
+      <bpmn:extensionElements>
+        <camunda:executionListener delegateExpression="${loggingDelegate}" event="start" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>SequenceFlow_154opkx</bpmn:incoming>
+      <bpmn:terminateEventDefinition />
+    </bpmn:endEvent>
+  </bpmn:process>
+  <bpmn:error id="Error_1dykt7y" name="Error_SubProcessSentError" errorCode="1000" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_ErrorEvent">
+      <bpmndi:BPMNShape id="_BPMNShape_StartEvent_2" bpmnElement="StartEvent_MainProcess">
+        <dc:Bounds x="189" y="164" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="177" y="200" width="66" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1337pvr_di" bpmnElement="SequenceFlow_1337pvr">
+        <di:waypoint x="225" y="182" />
+        <di:waypoint x="254" y="182" />
+        <di:waypoint x="254" y="182" />
+        <di:waypoint x="300" y="182" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="269" y="272" width="0" height="12" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="SubProcess_0ksvpcl_di" bpmnElement="Task_07420kt" isExpanded="true">
+        <dc:Bounds x="300" y="81" width="449" height="201" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="BoundaryEvent_0a7jou4_di" bpmnElement="BoundaryEvent_0l286sf">
+        <dc:Bounds x="481" y="264" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="527" y="293" width="81" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_154opkx_di" bpmnElement="SequenceFlow_154opkx">
+        <di:waypoint x="499" y="300" />
+        <di:waypoint x="499" y="339" />
+        <di:waypoint x="842" y="339" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="514" y="409.5" width="0" height="12" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="StartEvent_07wc1a1_di" bpmnElement="StartEvent_SubProcess">
+        <dc:Bounds x="336" y="168" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="327" y="208" width="59" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="ExclusiveGateway_1l0mu1f_di" bpmnElement="ExclusiveGateway_ProduceError" isMarkerVisible="true">
+        <dc:Bounds x="421" y="161" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="485" y="174" width="74" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_0o31jp5_di" bpmnElement="SequenceFlow_0o31jp5">
+        <di:waypoint x="372" y="186" />
+        <di:waypoint x="421" y="186" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="396.5" y="261" width="0" height="12" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_19f5aue_di" bpmnElement="EndEvent_SubProcessEndEvent">
+        <dc:Bounds x="657" y="107" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="648" y="147" width="59" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_05jwfw9_di" bpmnElement="SequenceFlow_ToSubProcessEndEvent">
+        <di:waypoint x="446" y="161" />
+        <di:waypoint x="446" y="125" />
+        <di:waypoint x="657" y="125" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="526" y="107" width="13" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="SequenceFlow_0sspjlx_di" bpmnElement="SequenceFlow_ToErrorSendEvent">
+        <di:waypoint x="446" y="211" />
+        <di:waypoint x="446" y="228" />
+        <di:waypoint x="657" y="228" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="526" y="231" width="18" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_13wogla_di" bpmnElement="EndEvent_SendErrorEvent">
+        <dc:Bounds x="657" y="210" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="636" y="250" width="82" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_1ki5mx5_di" bpmnElement="EndEvent_MainProcessEndEvent">
+        <dc:Bounds x="842" y="164" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="827" y="209" width="66" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="SequenceFlow_1dt5cb1_di" bpmnElement="SequenceFlow_1dt5cb1">
+        <di:waypoint x="749" y="182" />
+        <di:waypoint x="842" y="182" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="795.5" y="257" width="0" height="12" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNShape id="EndEvent_0q066wl_di" bpmnElement="EndEvent_MainProcessError">
+        <dc:Bounds x="842" y="321" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="820" y="361" width="79" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -1,0 +1,45 @@
+server:
+  port: 8080
+
+spring:
+  jersey:
+    application-path: /camunda/rest
+  h2:
+    console:
+      enabled: true
+      path: /h2
+  datasource:
+    url: jdbc:h2:file:./src/main/resources/db/camunda-workshop;DB_CLOSE_ON_EXIT=FALSE;AUTO_SERVER=TRUE;
+    username: sa
+    password: sa
+    driver-class-name: org.h2.Driver
+  jpa:
+    open-in-view: false
+  activemq:
+    broker-url: vm://localhost?broker.useShutdownHook=false&broker.persistent=false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: hawtio,jolokia
+hawtio:
+  authenticationEnabled: false
+
+camunda:
+  bpm:
+    webapp:
+      index-redirect-enabled: true
+    default-serialization-format: application/json
+    job-execution:
+      wait-time-in-millis: 1000
+      max-wait: 5000
+
+cfd:
+  process:
+    dreissig-sekunden-timer: PT30S
+    ein-tag-timer: P1D
+  queue:
+    neuer-umsatz: neuer-umsatz-queue
+    partnerkonto-senden: partnerkonto-senden-queue
+    partnerkonto-empfangen: partnerkonto-bestaetigung-queue

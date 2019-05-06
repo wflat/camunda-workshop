@@ -1,0 +1,75 @@
+<!--
+ Camunda Workshop
+
+ @author wflat
+-->
+
+<!-- formKey: embedded:app:forms/embedded/cfd-process-start-form.html -->
+<div>
+    <h3>Kontoumsatz eingeben</h3>
+</div>
+
+<form class="form-horizontal" role="form">
+    <div class="form-group">
+        <label class="control-label col-md-4" for="business-key-field">Business key</label>
+        <div class="col-md-8">
+            <input readonly id="business-key-field" ng-model="businessKey" cam-variable-type="String"
+                   class="form-control"/>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-md-4" for="iban-field">IBAN</label>
+        <div class="col-md-8">
+            <input required id="iban-field" ng-model="kontoumsatz.iban" cam-variable-type="String"
+                   class="form-control"/>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-md-4" for="kontentyp-field">Kontentyp</label>
+        <div class="col-md-8">
+            <input required id="kontentyp-field" ng-model="kontoumsatz.kontentyp" cam-variable-type="String"
+                   class="form-control"/>
+        </div>
+    </div>
+    <div class="form-group">
+        <label class="control-label col-md-4" for="betrag-field">Betrag</label>
+        <div class="col-md-8">
+            <input id="betrag-field" ng-model="kontoumsatz.betrag" cam-variable-type="Double" class="form-control"/>
+        </div>
+    </div>
+
+    <script cam-script type="text/form-script">
+    // debugger;
+    var variableManager = camForm.variableManager;
+
+    camForm.on('form-loaded', function() {
+      // Generated BusinessKey
+      $scope.businessKey = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = Math.random()*16|0,v=c=='x'?r:r&0x3|0x8;return v.toString(16);
+      });
+      $scope.kontoumsatz = {
+        iban: 'DE 1234 5678 1234 5678 90',
+        kontentyp: 'CFD',
+        betrag: 0.0
+      };
+    });
+
+    camForm.on('submit', function() {
+      // Set the BusinessKey
+      camForm.businessKey = $scope.businessKey;
+
+      // declare a 'json' process-variable 'kontoumsatz'
+      variableManager.createVariable({
+        name: 'kontoumsatz',
+        type: 'Object',
+        value: $scope.kontoumsatz,
+        valueInfo: {
+          serializationDataFormat: 'application/json',
+          objectTypeName: 'de.mathema.springboot.camunda.workshop.model.Kontoumsatz'
+        }
+      });
+    });
+
+
+    </script>
+</form>
